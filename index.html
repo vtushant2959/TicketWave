@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicketWave - Book Event & Movie Tickets</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#4f46e5',secondary:'#f59e0b'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :where([class^="ri-"])::before { content: "\f3c2"; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hero-bg {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 30%, rgba(255, 255, 255, 0.7) 50%, rgba(255, 255, 255, 0) 100%), url('https://public.readdy.ai/ai/img_res/b6ad70f058d9ac2c1cb837e17b20b080.jpg');
+            background-size: cover;
+            background-position: center right;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .seat {
+            transition: all 0.3s ease;
+        }
+        
+        .seat:hover:not(.seat-booked):not(.seat-selected) {
+            background-color: #d1d5db;
+        }
+        
+        .seat-selected {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        .seat-booked {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .custom-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .checkmark {
+            height: 20px;
+            width: 20px;
+            background-color: #fff;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
+        }
+        
+        .checkmark:after {
+            content: "";
+            display: none;
+        }
+        
+        .custom-checkbox input:checked ~ .checkmark:after {
+            display: block;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .custom-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .custom-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e5e7eb;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .switch-slider {
+            background-color: #4f46e5;
+        }
+        
+        input:checked + .switch-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        
+        .tab-button.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+        
+        .payment-method {
+            transition: all 0.3s ease;
+        }
+        
+        .payment-method.selected {
+            border-color: #4f46e5;
+            background-color: #f5f3ff;
+        }
+        
+        .category-card {
+            transition: all 0.3s ease;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .event-card {
+            transition: all 0.3s ease;
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .event-card:hover .event-image {
+            transform: scale(1.05);
+        }
+        
+        .event-image {
+            transition: all 0.5s ease;
+        }
+        
+        .booking-step {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-10">
+                <a href="#" class="text-3xl font-['Pacifico'] text-primary">TicketWave</a>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-800 hover:text-primary font-medium transition-colors">Events</a>
+                    <a href="#" class="text-gray-800 hover:text-primary font-medium transition-colors">Movies</a>
+                    <a href="#" class="text-gray-800 hover:text-primary font-medium transition-colors">Venues</a>
+                    <a href="#" class="text-gray-800 hover:text-primary font-medium transition-colors">Deals</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-6">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Search events, movies..." class="w-64 pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+                        <i class="ri-search-line"></i>
+                    </div>
+                </div>
+                
+                <div class="relative w-10 h-10 flex items-center justify-center text-gray-700 hover:text-primary cursor-pointer">
+                    <i class="ri-shopping-cart-2-line ri-lg"></i>
+                    <span class="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">3</span>
+                </div>
+                
+                <button class="hidden md:block bg-white text-primary border border-primary px-4 py-2 rounded-button font-medium hover:bg-primary/5 transition-colors whitespace-nowrap">Sign In</button>
+                <button class="bg-primary text-white px-4 py-2 rounded-button font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Register</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg h-[500px] flex items-center">
+        <div class="container mx-auto px-4 w-full">
+            <div class="max-w-xl">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Discover & Book Amazing Experiences</h1>
+                <p class="text-lg text-gray-700 mb-8">Find and book the best events, movies, and shows in your city with just a few clicks.</p>
+                
+                <div class="bg-white p-4 rounded-lg shadow-lg">
+                    <div class="flex space-x-4 mb-4">
+                        <button class="tab-button active flex-1 py-2 px-1 rounded-full text-center font-medium whitespace-nowrap">Events</button>
+                        <button class="tab-button flex-1 py-2 px-1 rounded-full text-center font-medium text-gray-700 whitespace-nowrap">Movies</button>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
+                        <div class="relative flex-grow">
+                            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+                                <i class="ri-map-pin-line"></i>
+                            </div>
+                            <input type="text" placeholder="Location" class="w-full pl-10 pr-4 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        </div>
+                        
+                        <div class="relative flex-grow">
+                            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+                                <i class="ri-calendar-line"></i>
+                            </div>
+                            <input type="text" placeholder="Date" class="w-full pl-10 pr-4 py-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        </div>
+                        
+                        <button class="bg-primary text-white px-6 py-3 rounded-button font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Browse by Category</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">Discover events and movies across various categories that match your interests and preferences.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <div class="category-card bg-white rounded-lg shadow-md p-6 text-center cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center text-primary">
+                        <i class="ri-film-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-900">Movies</h3>
+                    <p class="text-sm text-gray-500 mt-1">450+ options</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow-md p-6 text-center cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
+                        <i class="ri-music-2-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-900">Concerts</h3>
+                    <p class="text-sm text-gray-500 mt-1">120+ events</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow-md p-6 text-center cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-green-50 rounded-full flex items-center justify-center text-green-500">
+                        <i class="ri-football-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-900">Sports</h3>
+                    <p class="text-sm text-gray-500 mt-1">85+ events</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow-md p-6 text-center cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-purple-50 rounded-full flex items-center justify-center text-purple-500">
+                        <i class="ri-theatre-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-900">Theater</h3>
+                    <p class="text-sm text-gray-500 mt-1">60+ shows</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow-md p-6 text-center cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-pink-50 rounded-full flex items-center justify-center text-pink-500">
+                        <i class="ri-community-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-900">Festivals</h3>
+                    <p class="text-sm text-gray-500 mt-1">40+ events</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-lg shadow-md p-6 text-center cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center text-red-500">
+                        <i class="ri-more-2-fill ri-2x"></i>
+                    </div>
+                    <h3 class="font-medium text-gray-900">More</h3>
+                    <p class="text-sm text-gray-500 mt-1">200+ options</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Events Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900">Featured Events</h2>
+                
+                <div class="flex space-x-2">
+                    <button class="bg-white text-gray-700 px-4 py-2 rounded-button border border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                        <i class="ri-filter-3-line mr-2"></i>Filter
+                    </button>
+                    <button class="bg-white text-gray-700 px-4 py-2 rounded-button border border-gray-300 hover:bg-gray-50 transition-colors whitespace-nowrap">
+                        <i class="ri-sort-desc mr-2"></i>Sort
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-48">
+                        <img src="https://public.readdy.ai/ai/img_res/52241e0ca1fa3a68d7e10d912aff68a0.jpg" alt="Summer Music Festival" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-primary text-white text-xs px-2 py-1 rounded-full">Music</div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">Summer Music Festival</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <i class="ri-calendar-line mr-1"></i>
+                            <span>April 15, 2025</span>
+                            <span class="mx-2">•</span>
+                            <i class="ri-time-line mr-1"></i>
+                            <span>7:00 PM</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <i class="ri-map-pin-line mr-1"></i>
+                            <span>Central Park, New York</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-900">$59.99</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Now</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-48">
+                        <img src="https://public.readdy.ai/ai/img_res/22e837a7e9cd53efb3bf34a17b7dfd0a.jpg" alt="NBA Finals 2025" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Sports</div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">NBA Finals 2025</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <i class="ri-calendar-line mr-1"></i>
+                            <span>April 20, 2025</span>
+                            <span class="mx-2">•</span>
+                            <i class="ri-time-line mr-1"></i>
+                            <span>8:30 PM</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <i class="ri-map-pin-line mr-1"></i>
+                            <span>Madison Square Garden, NY</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-900">$120.00</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Now</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-48">
+                        <img src="https://public.readdy.ai/ai/img_res/2c3d2d883ad525da4b3c4df491bd5e66.jpg" alt="Hamilton - Broadway Show" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-purple-500 text-white text-xs px-2 py-1 rounded-full">Theater</div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">Hamilton - Broadway Show</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <i class="ri-calendar-line mr-1"></i>
+                            <span>April 25, 2025</span>
+                            <span class="mx-2">•</span>
+                            <i class="ri-time-line mr-1"></i>
+                            <span>7:30 PM</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <i class="ri-map-pin-line mr-1"></i>
+                            <span>Richard Rodgers Theatre, NY</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-900">$199.00</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Now</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-48">
+                        <img src="https://public.readdy.ai/ai/img_res/dcca41fd13e24e5cc48721ac38ac1697.jpg" alt="Avengers: New Era Premiere" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">Movie</div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">Avengers: New Era Premiere</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <i class="ri-calendar-line mr-1"></i>
+                            <span>May 1, 2025</span>
+                            <span class="mx-2">•</span>
+                            <i class="ri-time-line mr-1"></i>
+                            <span>9:00 PM</span>
+                        </div>
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <i class="ri-map-pin-line mr-1"></i>
+                            <span>AMC Empire 25, New York</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-900">$24.99</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <button class="bg-white text-primary border border-primary px-6 py-3 rounded-button font-medium hover:bg-primary/5 transition-colors whitespace-nowrap">View All Events</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Movies Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900">Now Showing</h2>
+                
+                <div class="flex space-x-2">
+                    <button class="bg-gray-50 text-gray-700 px-4 py-2 rounded-button border border-gray-300 hover:bg-gray-100 transition-colors whitespace-nowrap">
+                        <i class="ri-filter-3-line mr-2"></i>Filter
+                    </button>
+                    <button class="bg-gray-50 text-gray-700 px-4 py-2 rounded-button border border-gray-300 hover:bg-gray-100 transition-colors whitespace-nowrap">
+                        <i class="ri-sort-desc mr-2"></i>Sort
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-64">
+                        <img src="https://public.readdy.ai/ai/img_res/a789caa0a4944906b94c29c5810cb15d.jpg" alt="Interstellar: Beyond Time" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                            <i class="ri-star-fill mr-1"></i>9.2
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">Interstellar: Beyond Time</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <span>Sci-Fi, Adventure</span>
+                            <span class="mx-2">•</span>
+                            <span>165 min</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <span class="font-bold text-gray-900">$14.99</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Tickets</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-64">
+                        <img src="https://public.readdy.ai/ai/img_res/375ce08f8e4cd084d83d5693f607f789.jpg" alt="Love in Paris" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                            <i class="ri-star-fill mr-1"></i>8.7
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">Love in Paris</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <span>Romance, Comedy</span>
+                            <span class="mx-2">•</span>
+                            <span>118 min</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <span class="font-bold text-gray-900">$12.99</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Tickets</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-64">
+                        <img src="https://public.readdy.ai/ai/img_res/3297916cf44578f190474d05c44be852.jpg" alt="The Silent Witness" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                            <i class="ri-star-fill mr-1"></i>9.0
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">The Silent Witness</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <span>Thriller, Mystery</span>
+                            <span class="mx-2">•</span>
+                            <span>142 min</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <span class="font-bold text-gray-900">$13.99</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Tickets</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative overflow-hidden h-64">
+                        <img src="https://public.readdy.ai/ai/img_res/44cad38fb14c4cc850320e2d6c9dd5c0.jpg" alt="Dreamland Adventures" class="event-image w-full h-full object-cover object-top">
+                        <div class="absolute top-3 right-3 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
+                            <i class="ri-star-fill mr-1"></i>8.9
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-lg text-gray-900 mb-1">Dreamland Adventures</h3>
+                        <div class="flex items-center text-sm text-gray-500 mb-2">
+                            <span>Animation, Family</span>
+                            <span class="mx-2">•</span>
+                            <span>105 min</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-3">
+                            <span class="font-bold text-gray-900">$11.99</span>
+                            <button class="bg-primary text-white px-3 py-1.5 rounded-button text-sm font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Book Tickets</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-10">
+                <button class="bg-white text-primary border border-primary px-6 py-3 rounded-button font-medium hover:bg-primary/5 transition-colors whitespace-nowrap">View All Movies</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Process Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">Booking your favorite events and movies is easy with our simple 4-step process.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                        <i class="ri-search-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-semibold text-xl text-gray-900 mb-2">1. Browse & Select</h3>
+                    <p class="text-gray-600">Find your favorite events or movies from our extensive collection.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                        <i class="ri-calendar-check-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-semibold text-xl text-gray-900 mb-2">2. Choose Date & Seats</h3>
+                    <p class="text-gray-600">Select your preferred date, time, and pick the best seats available.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                        <i class="ri-secure-payment-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-semibold text-xl text-gray-900 mb-2">3. Secure Payment</h3>
+                    <p class="text-gray-600">Complete your booking with our secure and flexible payment options.</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                        <i class="ri-ticket-2-line ri-2x"></i>
+                    </div>
+                    <h3 class="font-semibold text-xl text-gray-900 mb-2">4. Get Your Tickets</h3>
+                    <p class="text-gray-600">Receive your e-tickets instantly via email or in the app.</p>
+                </div>
+            </div>
+            
+            <div class="mt-12 bg-white p-8 rounded-lg shadow-md">
+                <div class="flex flex-col md:flex-row mb-6 border-b pb-6">
+                    <div class="md:w-1/3 mb-4 md:mb-0">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Booking Demo</h3>
+                        <p class="text-gray-600 mb-4">See how easy it is to book tickets for "Avengers: New Era"</p>
+                        
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
+                                    <i class="ri-film-line"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Avengers: New Era</h4>
+                                    <p class="text-sm text-gray-500">Action, Adventure, Sci-Fi</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center text-sm text-gray-600 mb-2">
+                                <i class="ri-calendar-line mr-2"></i>
+                                <span>May 1, 2025</span>
+                            </div>
+                            
+                            <div class="flex items-center text-sm text-gray-600 mb-2">
+                                <i class="ri-time-line mr-2"></i>
+                                <span>9:00 PM</span>
+                            </div>
+                            
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="ri-map-pin-line mr-2"></i>
+                                <span>AMC Empire 25, New York</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="md:w-2/3 md:pl-8">
+                        <h4 class="font-semibold text-lg text-gray-900 mb-4">Select Seats</h4>
+                        
+                        <div class="mb-6">
+                            <div class="w-full bg-gray-200 h-8 rounded-lg mb-6 flex items-center justify-center text-sm text-gray-500">SCREEN</div>
+                            
+                            <div class="grid grid-cols-8 gap-2 mb-4">
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">A1</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">A2</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">A3</div>
+                                <div class="seat seat-booked h-8 flex items-center justify-center text-xs font-medium rounded cursor-not-allowed">A4</div>
+                                <div class="seat seat-booked h-8 flex items-center justify-center text-xs font-medium rounded cursor-not-allowed">A5</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">A6</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">A7</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">A8</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-8 gap-2 mb-4">
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">B1</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">B2</div>
+                                <div class="seat seat-selected h-8 flex items-center justify-center text-xs font-medium rounded cursor-pointer">B3</div>
+                                <div class="seat seat-selected h-8 flex items-center justify-center text-xs font-medium rounded cursor-pointer">B4</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">B5</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">B6</div>
+                                <div class="seat seat-booked h-8 flex items-center justify-center text-xs font-medium rounded cursor-not-allowed">B7</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">B8</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-8 gap-2">
+                                <div class="seat seat-booked h-8 flex items-center justify-center text-xs font-medium rounded cursor-not-allowed">C1</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">C2</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">C3</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">C4</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">C5</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">C6</div>
+                                <div class="seat h-8 flex items-center justify-center text-xs font-medium bg-gray-100 rounded cursor-pointer">C7</div>
+                                <div class="seat seat-booked h-8 flex items-center justify-center text-xs font-medium rounded cursor-not-allowed">C8</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-gray-100 rounded mr-2"></div>
+                                    <span class="text-sm text-gray-600">Available</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-primary rounded mr-2"></div>
+                                    <span class="text-sm text-gray-600">Selected</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-gray-300 rounded mr-2"></div>
+                                    <span class="text-sm text-gray-600">Booked</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">Selected: <span class="font-medium">2 seats</span></p>
+                                <p class="font-bold text-gray-900">Total: $49.98</p>
+                            </div>
+                        </div>
+                        
+                        <button class="w-full bg-primary text-white py-3 rounded-button font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Continue to Payment</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Payment Options</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="payment-method selected border-2 border-primary p-4 rounded-lg cursor-pointer">
+                            <div class="flex items-center mb-2">
+                                <div class="w-6 h-6 flex items-center justify-center text-primary mr-2">
+                                    <i class="ri-bank-card-fill ri-lg"></i>
+                                </div>
+                                <span class="font-medium">Credit Card</span>
+                            </div>
+                            <p class="text-sm text-gray-500">Pay securely with your credit card</p>
+                        </div>
+                        
+                        <div class="payment-method border-2 border-gray-200 p-4 rounded-lg cursor-pointer">
+                            <div class="flex items-center mb-2">
+                                <div class="w-6 h-6 flex items-center justify-center text-gray-700 mr-2">
+                                    <i class="ri-paypal-fill ri-lg"></i>
+                                </div>
+                                <span class="font-medium">PayPal</span>
+                            </div>
+                            <p class="text-sm text-gray-500">Fast and secure payment with PayPal</p>
+                        </div>
+                        
+                        <div class="payment-method border-2 border-gray-200 p-4 rounded-lg cursor-pointer">
+                            <div class="flex items-center mb-2">
+                                <div class="w-6 h-6 flex items-center justify-center text-gray-700 mr-2">
+                                    <i class="ri-apple-fill ri-lg"></i>
+                                </div>
+                                <span class="font-medium">Apple Pay</span>
+                            </div>
+                            <p class="text-sm text-gray-500">Quick payment with Apple Pay</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                        <h4 class="font-medium text-gray-900 mb-4">Card Details</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                                <div class="relative">
+                                    <input type="text" placeholder="1234 5678 9012 3456" class="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                    <div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+                                        <i class="ri-bank-card-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                                <input type="text" placeholder="John Smith" class="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                <input type="text" placeholder="MM/YY" class="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                                <div class="relative">
+                                    <input type="text" placeholder="123" class="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                    <div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+                                        <i class="ri-lock-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                                <input type="text" placeholder="10001" class="w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <label class="custom-checkbox flex items-center">
+                                <input type="checkbox" checked>
+                                <span class="checkmark mr-2"></span>
+                                <span class="text-sm text-gray-700">Save this card for future payments</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                        <div class="mb-4 md:mb-0">
+                            <p class="text-sm text-gray-600 mb-1">Total Amount</p>
+                            <p class="text-2xl font-bold text-gray-900">$49.98</p>
+                        </div>
+                        
+                        <button class="bg-primary text-white px-8 py-3 rounded-button font-medium hover:bg-primary/90 transition-colors whitespace-nowrap">Complete Payment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">What Our Customers Say</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">Thousands of happy customers have booked their perfect experience with TicketWave.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="text-yellow-400 flex">
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 mb-6">"The booking process was incredibly smooth. I got tickets for Hamilton in just a few clicks, and the seat selection interface was very intuitive. Will definitely use TicketWave again!"</p>
+                    
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full mr-4 overflow-hidden">
+                            <img src="https://public.readdy.ai/ai/img_res/aa5c601bceb7454e1738c458f2e6753f.jpg" alt="Emily Wilson" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">Emily Wilson</h4>
+                            <p class="text-sm text-gray-500">New York, NY</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="text-yellow-400 flex">
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 mb-6">"I've been using TicketWave for all my movie bookings for the past year. The interface is clean, the process is fast, and I love getting instant confirmation. Their customer service is excellent too!"</p>
+                    
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full mr-4 overflow-hidden">
+                            <img src="https://public.readdy.ai/ai/img_res/98916643dc3c7d6cf049ac0479626e03.jpg" alt="Michael Chen" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">Michael Chen</h4>
+                            <p class="text-sm text-gray-500">San Francisco, CA</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="text-yellow-400 flex">
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-fill"></i>
+                            <i class="ri-star-half-fill"></i>
+                        </div>
+                    </div>
+                    
+                    <p class="text-gray-700 mb-6">"The Summer Music Festival tickets sold out everywhere, but I managed to get them on TicketWave! The reminder notifications were super helpful, and the mobile tickets worked flawlessly at the venue."</p>
+                    
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gray-300 rounded-full mr-4 overflow-hidden">
+                            <img src="https://public.readdy.ai/ai/img_res/7258b6aa007b96672b2bba8ac416dbe4.jpg" alt="Sophia Rodriguez" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900">Sophia Rodriguez</h4>
+                            <p class="text-sm text-gray-500">Miami, FL</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download App Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-8 md:mb-0">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">Download Our Mobile App</h2>
+                    <p class="text-gray-600 mb-6">Get the best ticket booking experience on your mobile device. Book tickets, receive notifications, and access your e-tickets anytime, anywhere.</p>
+                    
+                    <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                        <button class="bg-black text-white px-6 py-3 rounded-button font-medium hover:bg-black/90 transition-colors flex items-center justify-center whitespace-nowrap">
+                            <i class="ri-apple-fill ri-lg mr-2"></i>
+                            <div class="text-left">
+                                <div class="text-xs">Download on the</div>
+                                <div class="text-sm font-semibold">App Store</div>
+                            </div>
+                        </button>
+                        
+                        <button class="bg-black text-white px-6 py-3 rounded-button font-medium hover:bg-black/90 transition-colors flex items-center justify-center whitespace-nowrap">
+                            <i class="ri-google-play-fill ri-lg mr-2"></i>
+                            <div class="text-left">
+                                <div class="text-xs">Get it on</div>
+                                <div class="text-sm font-semibold">Google Play</div>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <div class="flex items-center mb-2">
+                            <div class="w-5 h-5 flex items-center justify-center text-primary mr-2">
+                                <i class="ri-check-line"></i>
+                            </div>
+                            <span class="text-gray-700">Exclusive mobile-only deals and discounts</span>
+                        </div>
+                        
+                        <div class="flex items-center mb-2">
+                            <div class="w-5 h-5 flex items-center justify-center text-primary mr-2">
+                                <i class="ri-check-line"></i>
+                            </div>
+                            <span class="text-gray-700">Faster checkout with saved preferences</span>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <div class="w-5 h-5 flex items-center justify-center text-primary mr-2">
+                                <i class="ri-check-line"></i>
+                            </div>
+                            <span class="text-gray-700">Real-time event updates and notifications</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="md:w-1/2 flex justify-center">
+                    <img src="https://public.readdy.ai/ai/img_res/5844c34fdc21cb87b008a5fc32c4b494.jpg" alt="TicketWave Mobile App" class="max-w-full h-auto">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="py-16 bg-primary text-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold mb-4">Stay Updated</h2>
+                <p class="text-white/80 max-w-2xl mx-auto">Subscribe to our newsletter to receive the latest updates on new events, exclusive offers, and promotions.</p>
+            </div>
+            
+            <div class="max-w-xl mx-auto">
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-2">
+                    <div class="relative flex-grow">
+                        <input type="email" placeholder="Your email address" class="w-full pl-4 pr-10 py-3 rounded-l-lg sm:rounded-r-none rounded-r-lg text-gray-800 focus:outline-none border-none">
+                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+                            <i class="ri-mail-line"></i>
+                        </div>
+                    </div>
+                    <button class="bg-white text-primary px-6 py-3 rounded-r-lg sm:rounded-l-none rounded-l-lg font-medium hover:bg-gray-100 transition-colors whitespace-nowrap">Subscribe</button>
+                </div>
+                
+                <div class="mt-4 text-sm text-white/70 text-center">
+                    <label class="custom-checkbox inline-flex items-center">
+                        <input type="checkbox" checked>
+                        <span class="checkmark mr-2 border-white/30"></span>
+                        <span>I agree to receive promotional emails and updates from TicketWave</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-16 pb-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
+                <div class="lg:col-span-2">
+                    <a href="#" class="text-3xl font-['Pacifico'] text-white mb-4 inline-block">TicketWave</a>
+                    <p class="text-gray-400 mb-6">Your one-stop destination for booking event and movie tickets with ease. Discover, book, and enjoy seamless experiences.</p>
+                    
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="ri-facebook-fill"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="ri-twitter-x-fill"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="ri-instagram-fill"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="ri-youtube-fill"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Events</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Movies</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Venues</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Gift Cards</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Support</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Contact Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">FAQs</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Refund Policy</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <div class="w-5 h-5 flex items-center justify-center text-gray-400 mr-3 mt-0.5">
+                                <i class="ri-map-pin-line"></i>
+                            </div>
+                            <span class="text-gray-400">123 Broadway, New York, NY 10001, USA</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-5 h-5 flex items-center justify-center text-gray-400 mr-3">
+                                <i class="ri-phone-line"></i>
+                            </div>
+                            <span class="text-gray-400">+1 (555) 123-4567</span>
+                        </li>
+                        <li class="flex items-center">
+                            <div class="w-5 h-5 flex items-center justify-center text-gray-400 mr-3">
+                                <i class="ri-mail-line"></i>
+                            </div>
+                            <span class="text-gray-400">support@ticketwave.com</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8">
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-gray-400 text-sm">&copy; 2025 TicketWave. All rights reserved.</p>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="w-8 h-5 flex items-center justify-center">
+                            <i class="ri-visa-fill ri-lg text-gray-300"></i>
+                        </div>
+                        <div class="w-8 h-5 flex items-center justify-center">
+                            <i class="ri-mastercard-fill ri-lg text-gray-300"></i>
+                        </div>
+                        <div class="w-8 h-5 flex items-center justify-center">
+                            <i class="ri-paypal-fill ri-lg text-gray-300"></i>
+                        </div>
+                        <div class="w-8 h-5 flex items-center justify-center">
+                            <i class="ri-apple-fill ri-lg text-gray-300"></i>
+                        </div>
+                        <div class="w-8 h-5 flex items-center justify-center">
+                            <i class="ri-google-fill ri-lg text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Help Button -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors">
+            <i class="ri-customer-service-2-line ri-lg"></i>
+        </button>
+    </div>
+
+    <script>
+        // Seat Selection
+        document.querySelectorAll('.seat:not(.seat-booked)').forEach(seat => {
+            seat.addEventListener('click', function() {
+                this.classList.toggle('seat-selected');
+            });
+        });
+        
+        // Payment Method Selection
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(m => {
+                    m.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+        
+        // Tab Switching
+        document.querySelectorAll('.tab-button').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab-button').forEach(t => {
+                    t.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
